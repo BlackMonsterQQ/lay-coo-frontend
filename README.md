@@ -1,8 +1,10 @@
 # 岚途 LayCoo · 前端工程
 
+GitHub：https://github.com/BlackMonsterQQ/lay-coo-frontend
+
 Vue 3 + Vite + TypeScript + Pinia + Vue Router + Element Plus + ECharts。
 
-本仓库只包含前端。后端是独立仓库 `lay-coo-backend`，本仓库通过 Vite 代理访问网关 `http://localhost:8080`。
+本仓库只包含前端。后端是独立仓库 [lay-coo-backend](https://github.com/BlackMonsterQQ/lay-coo-backend)，本仓库通过 Vite 代理访问网关 `http://localhost:8080`。
 
 ## 界面预览
 
