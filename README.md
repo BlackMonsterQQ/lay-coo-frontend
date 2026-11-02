@@ -17,7 +17,7 @@ Vue 3 + Vite + TypeScript + Pinia + Vue Router + Element Plus + ECharts。
 直接打开本仓库根目录：
 
 ```text
-E:\lay-coo-frontend
+E:\laycoo\frontend
 ```
 
 WebStorm 会通过 `package.json` 自动识别为 npm 项目。
