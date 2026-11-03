@@ -30,8 +30,8 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="app-shell">
-    <AppHeader />
-    <main class="app-main">
+    <AppHeader v-if="route.name !== 'home'" />
+    <main class="app-main" :class="{ 'app-main--bare': route.name === 'home' }">
       <RouterView v-slot="{ Component, route: current }">
         <Transition name="page-fade" mode="out-in">
           <component :is="Component" :key="current.path" />
@@ -52,6 +52,10 @@ onBeforeUnmount(() => {
 .app-main {
   flex: 1;
   padding-top: 78px;
+}
+
+.app-main.app-main--bare {
+  padding-top: 0;
 }
 
 @media (max-width: 900px) {
