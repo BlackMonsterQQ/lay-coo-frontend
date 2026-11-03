@@ -33,6 +33,12 @@ const router = createRouter({
       meta: { title: '内容详情' }
     },
     {
+      path: '/my-plans',
+      name: 'my-plans',
+      component: () => import('@/views/PlanListView.vue'),
+      meta: { title: '我的行程', requiresAuth: true }
+    },
+    {
       path: '/plan/new',
       name: 'plan-create',
       component: () => import('@/views/PlanCreateView.vue'),

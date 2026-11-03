@@ -3,10 +3,12 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { planApi } from '@/api'
+import { useUserStore } from '@/stores/user'
 import type { PlanDetail, PlanTimelineItem, PlanTransportLeg } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const detail = ref<PlanDetail | null>(null)
 const loading = ref(true)
@@ -227,7 +229,9 @@ onBeforeUnmount(stopPolling)
         <div class="plan-head__actions">
           <button class="btn btn--ghost btn--sm" type="button" @click="regenerate">重新规划</button>
           <button class="btn btn--primary btn--sm" type="button" @click="share">复制分享链接</button>
+          <RouterLink v-if="userStore.isLoggedIn" to="/my-plans" class="btn btn--ghost btn--sm">我的行程</RouterLink>
         </div>
+        <p v-if="userStore.isLoggedIn" class="plan-saved-note">已自动保存到「我的行程」</p>
       </header>
 
       <section v-if="transport" class="intercity panel">
@@ -575,6 +579,12 @@ onBeforeUnmount(stopPolling)
   display: flex;
   gap: 10px;
   margin-top: 20px;
+}
+
+.plan-saved-note {
+  margin-top: 10px;
+  color: var(--jade);
+  font-size: 10px;
 }
 
 .intercity {

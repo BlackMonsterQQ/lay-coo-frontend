@@ -167,7 +167,7 @@ onMounted(async () => {
       </RouterLink>
 
       <nav class="atlas__nav" aria-label="顶部导航">
-        <RouterLink to="/me">我的行程</RouterLink>
+        <RouterLink to="/my-plans">我的行程</RouterLink>
         <button type="button" @click="toggleSearch">搜索</button>
         <RouterLink v-if="!userStore.isLoggedIn" to="/login">登录</RouterLink>
         <RouterLink v-else to="/me">{{ nickname }}</RouterLink>

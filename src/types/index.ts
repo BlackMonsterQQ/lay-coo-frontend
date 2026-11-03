@@ -286,6 +286,24 @@ export interface TravelPlan {
   warnings?: string[]
 }
 
+export interface PlanSummary {
+  planNo: string
+  city: string
+  cityCode: string
+  originCity?: string
+  originCityCode?: string
+  startDate: string
+  endDate: string
+  dayCount: number
+  nights: number
+  status: string
+  title?: string
+  summary?: string
+  transportPreference?: string
+  model?: string
+  createTime?: string
+}
+
 export interface PlanDetail {
   planNo: string
   status: 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED' | string

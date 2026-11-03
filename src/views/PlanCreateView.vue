@@ -3,10 +3,12 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { cityApi, planApi } from '@/api'
+import { useUserStore } from '@/stores/user'
 import type { City } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const cities = ref<City[]>([])
 const loadingCities = ref(true)
@@ -323,6 +325,9 @@ onMounted(async () => {
             <span v-else>生成我的行程攻略 <b>→</b></span>
           </button>
           <p class="p-note">生成通常需要 30–240 秒，结果页会自动轮询。</p>
+          <p v-if="!userStore.isLoggedIn" class="p-save-note">
+            <RouterLink to="/login">登录</RouterLink> 后生成，攻略会自动保存到「我的行程」。
+          </p>
         </form>
       </div>
     </div>
@@ -787,6 +792,17 @@ onMounted(async () => {
   color: rgba(205, 235, 230, 0.3);
   font-size: 9.5px;
   text-align: center;
+}
+
+.p-save-note {
+  margin-top: 6px;
+  color: rgba(205, 235, 230, 0.4);
+  font-size: 9.5px;
+  text-align: center;
+}
+
+.p-save-note a {
+  color: #ffb454;
 }
 
 :deep(.el-date-editor.el-input__wrapper),

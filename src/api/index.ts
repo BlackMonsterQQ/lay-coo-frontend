@@ -15,6 +15,7 @@ import type {
   PlanDetail,
   PlanGenerateResponse,
   PlanRequest,
+  PlanSummary,
   RecommendItem,
   TagCount,
   UserInfo
@@ -57,7 +58,9 @@ export const planApi = {
   generate: (payload: PlanRequest) =>
     http.post<PlanGenerateResponse, PlanGenerateResponse>('/plan/generate', payload),
   detail: (planNo: string) => http.get<PlanDetail, PlanDetail>(`/plan/${planNo}`),
-  retry: (planNo: string) => http.post<PlanDetail, PlanDetail>(`/plan/${planNo}/retry`)
+  retry: (planNo: string) => http.post<PlanDetail, PlanDetail>(`/plan/${planNo}/retry`),
+  myPlans: (page = 1, size = 9) =>
+    http.get<PageResult<PlanSummary>, PageResult<PlanSummary>>('/plan/my', { params: { page, size } })
 }
 
 export const interactionApi = {

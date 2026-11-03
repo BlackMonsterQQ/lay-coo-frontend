@@ -62,6 +62,7 @@ function onCommand(command: string) {
 
       <div class="header-actions">
         <template v-if="userStore.isLoggedIn">
+          <RouterLink to="/my-plans" class="nav-link nav-link--me">我的行程</RouterLink>
           <RouterLink to="/me" class="nav-link nav-link--me">我的收藏</RouterLink>
           <el-dropdown trigger="click" @command="onCommand">
             <button class="user-btn" type="button">
