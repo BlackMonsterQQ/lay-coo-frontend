@@ -23,7 +23,7 @@ const router = createRouter({
     return { top: 0 }
   },
   routes: [
-    { path: '/', name: 'home', component: () => import('@/views/HomeView.vue'), meta: { title: '发现本地' } },
+    { path: '/', name: 'home', component: () => import('@/views/HomeView.vue'), meta: { title: '选择城市', bare: true } },
     { path: '/explore', name: 'explore', component: () => import('@/views/ExploreView.vue'), meta: { title: '探索' } },
     { path: '/search', name: 'search', component: () => import('@/views/SearchView.vue'), meta: { title: '搜索' } },
     {
@@ -31,6 +31,12 @@ const router = createRouter({
       name: 'detail',
       component: () => import('@/views/DetailView.vue'),
       meta: { title: '内容详情' }
+    },
+    {
+      path: '/plan/new',
+      name: 'plan-create',
+      component: () => import('@/views/PlanCreateView.vue'),
+      meta: { title: '定制行程', bare: true }
     },
     {
       path: '/plan/:planNo',

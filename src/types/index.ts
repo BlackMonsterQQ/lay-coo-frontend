@@ -164,6 +164,7 @@ export interface City {
   id: number
   code: string
   name: string
+  province: string
   country: string
   longitude: number
   latitude: number

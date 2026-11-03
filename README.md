@@ -8,9 +8,11 @@ Vue 3 + Vite + TypeScript + Pinia + Vue Router + Element Plus + ECharts。
 
 ## 界面预览
 
-![首页](screenshots/home.png)
+![首页 · 中国城市网络](screenshots/home.png)
 
-![AI 行程规划](screenshots/plan-home.png)
+![选中城市后的地标背景](screenshots/plan-home.png)
+
+![行程配置](screenshots/plan-create.png)
 
 ![多日行程结果](screenshots/plan-result.png)
 
@@ -39,10 +41,13 @@ npm.cmd run dev
 
 ## AI 多日行程规划
 
-首页已改为「世界地图选城市 + 日期范围 + 偏好」表单：
+首页已改为「中国城市网络」：
 
-- 地图使用 ECharts Geo + 散点，城市坐标来自后端 `GET /api/v1/city/list`
-- 地图数据在 `src/assets/maps/world.json`，本地加载，不依赖 CDN
+- 首页只保留城市选择，不再放日期与偏好表单；表单移到 `/plan/new?city=...`
+- 中国地图使用 ECharts Geo + 339 个城市光点，覆盖地级及以上城市（含港澳）
+- 首页为深色科幻界面，选中城市后背景切换为该城市地标影像（Wikipedia 动态获取，失败时回退赛博地貌）
+- 支持城市 / 省份搜索、热门城市快捷选择、地图缩放与聚焦
+- 地图数据在 `src/assets/maps/china.json`，本地加载，不依赖 CDN
 - 提交后创建异步行程任务，跳转 `/plan/:planNo`
 - 结果页按天展示时间轴、餐饮、交通、预算、雨天备选
 - 生成中自动轮询，失败可重试
@@ -67,9 +72,9 @@ npm.cmd run build
 ```text
 src/
 ├─ api/          # Axios 封装与接口定义
-├─ assets/maps/  # 世界地图 GeoJSON
+├─ assets/maps/  # 中国地图 GeoJSON
 ├─ components/   # 通用组件
-├─ components/plan/ # 行程表单、世界地图、时间轴
+├─ components/plan/ # 中国城市网络、地标背景、行程表单、时间轴
 ├─ router/       # 路由与登录/管理员守卫
 ├─ stores/       # Pinia 状态
 ├─ styles/       # 全局样式与设计变量

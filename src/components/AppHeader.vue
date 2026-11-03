@@ -3,19 +3,14 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import SearchIcon from '@/components/SearchIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-const navItems = [
-  { label: '首页', to: '/' },
-  { label: '探索', to: '/explore' },
-  { label: '人文', to: '/explore?type=HUMANITY' },
-  { label: '搜索', to: '/search' }
-]
+const navItems = [{ label: '首页', to: '/' }]
 
+const isHome = computed(() => route.name === 'home' || route.name === 'plan-create')
 const activePath = computed(() => {
   if (route.path.startsWith('/explore')) {
     return route.query.type === 'HUMANITY' ? '/explore?type=HUMANITY' : '/explore'
@@ -43,8 +38,8 @@ function onCommand(command: string) {
 </script>
 
 <template>
-  <header class="site-header">
-    <div class="container header-inner">
+    <header class="site-header" :class="{ 'site-header--home': isHome }">
+      <div class="container header-inner">
       <RouterLink to="/" class="brand" aria-label="岚途 LayCoo 首页">
         <span class="brand__seal">岚</span>
         <span class="brand__text">
@@ -66,10 +61,6 @@ function onCommand(command: string) {
       </nav>
 
       <div class="header-actions">
-        <button class="icon-btn" type="button" aria-label="搜索" @click="go('/search')">
-          <SearchIcon :size="18" />
-        </button>
-
         <template v-if="userStore.isLoggedIn">
           <RouterLink to="/me" class="nav-link nav-link--me">我的收藏</RouterLink>
           <el-dropdown trigger="click" @command="onCommand">
@@ -117,6 +108,65 @@ function onCommand(command: string) {
   background: rgba(246, 241, 231, 0.86);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(226, 217, 200, 0.9);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.site-header--home {
+  background: rgba(3, 11, 18, 0.58);
+  border-bottom-color: rgba(94, 234, 212, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.site-header--home .brand__seal {
+  background: linear-gradient(145deg, #0f766e, #0e7490);
+  box-shadow: 0 0 24px rgba(94, 234, 212, 0.22);
+}
+
+.site-header--home .brand__text strong {
+  color: #eafffb;
+}
+
+.site-header--home .brand__text small {
+  color: rgba(205, 235, 230, 0.38);
+}
+
+.site-header--home .nav-link {
+  color: rgba(205, 235, 230, 0.55);
+}
+
+.site-header--home .nav-link:hover,
+.site-header--home .nav-link.is-active {
+  color: #eafffb;
+}
+
+.site-header--home .nav-link::after {
+  background: #5eead4;
+  box-shadow: 0 0 8px rgba(94, 234, 212, 0.8);
+}
+
+.site-header--home .user-btn {
+  border-color: rgba(94, 234, 212, 0.18);
+  background: rgba(4, 19, 29, 0.55);
+}
+
+.site-header--home .user-btn:hover {
+  border-color: rgba(94, 234, 212, 0.55);
+}
+
+.site-header--home .user-avatar {
+  background: #0f766e;
+  color: #eafffb;
+}
+
+.site-header--home .user-name,
+.site-header--home .nav-login {
+  color: rgba(234, 255, 251, 0.78);
+}
+
+.site-header--home .btn--primary {
+  background: #ffb454;
+  border-color: #ffb454;
+  color: #07131c;
 }
 
 .header-inner {
