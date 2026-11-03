@@ -21,6 +21,7 @@ let chart: echarts.ECharts | null = null
 let observer: ResizeObserver | null = null
 let mapRegistered = false
 let currentZoom = 1.08
+const backVisible = ref(true)
 
 interface CityDatum {
   name: string
@@ -59,30 +60,59 @@ const option = computed<EChartsOption>(() => {
 
   return {
     backgroundColor: 'transparent',
-    geo: {
-      map: 'china',
-      roam: true,
-      zoom: currentZoom,
-      center: [104, 36],
-      layoutCenter: ['50%', '50%'],
-      layoutSize: '100%',
-      scaleLimit: { min: 0.9, max: 14 },
-      itemStyle: {
-        areaColor: 'rgba(255, 255, 255, 0.018)',
-        borderColor: 'rgba(255, 255, 255, 0.34)',
-        borderWidth: 0.8,
-        shadowColor: 'rgba(0, 0, 0, 0.3)',
-        shadowBlur: 16
-      },
-      emphasis: {
+    geo: [
+      {
+        map: 'china',
+        roam: true,
+        zoom: currentZoom,
+        center: [104, 36],
+        layoutCenter: ['50%', '50%'],
+        layoutSize: '100%',
+        scaleLimit: { min: 0.9, max: 14 },
+        z: 2,
         itemStyle: {
-          areaColor: 'rgba(255, 255, 255, 0.07)',
-          borderColor: 'rgba(255, 255, 255, 0.7)'
+          areaColor: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(112, 181, 184, 0.36)' },
+            { offset: 0.5, color: 'rgba(24, 62, 68, 0.22)' },
+            { offset: 1, color: 'rgba(3, 15, 19, 0.04)' }
+          ]),
+          borderColor: 'rgba(235, 255, 250, 0.82)',
+          borderWidth: 1.15,
+          shadowColor: 'rgba(0, 0, 0, 0.68)',
+          shadowBlur: 48,
+          shadowOffsetY: 24
         },
-        label: { show: false }
+        emphasis: {
+          itemStyle: {
+            areaColor: 'rgba(120, 190, 190, 0.2)',
+            borderColor: 'rgba(255, 255, 255, 0.92)'
+          },
+          label: { show: false }
+        },
+        select: { disabled: true }
       },
-      select: { disabled: true }
-    },
+      {
+        map: 'china',
+        roam: false,
+        silent: true,
+        zoom: currentZoom,
+        center: [104, 36],
+        layoutCenter: ['50.35%', '51.55%'],
+        layoutSize: '100%',
+        z: 1,
+        show: backVisible.value,
+        itemStyle: {
+          areaColor: 'rgba(2, 12, 15, 0.38)',
+          borderColor: 'rgba(145, 205, 200, 0.2)',
+          borderWidth: 1,
+          shadowColor: 'rgba(0, 0, 0, 0.4)',
+          shadowBlur: 18,
+          shadowOffsetY: 10
+        },
+        emphasis: { disabled: true },
+        label: { show: false }
+      }
+    ],
     tooltip: {
       trigger: 'item',
       backgroundColor: 'rgba(12, 22, 26, 0.82)',
@@ -177,19 +207,30 @@ function onClick(params: unknown) {
   }
 }
 
+function hideBack() {
+  if (!backVisible.value) {
+    return
+  }
+  backVisible.value = false
+  chart?.setOption({ geo: [{}, { show: false }] })
+}
+
 function zoomIn() {
   currentZoom = Math.min(currentZoom * 1.35, 8)
-  chart?.setOption({ geo: { zoom: currentZoom } })
+  hideBack()
+  chart?.setOption({ geo: [{ zoom: currentZoom }] })
 }
 
 function zoomOut() {
   currentZoom = Math.max(currentZoom / 1.35, 1)
-  chart?.setOption({ geo: { zoom: currentZoom } })
+  hideBack()
+  chart?.setOption({ geo: [{ zoom: currentZoom }] })
 }
 
 function resetView() {
   currentZoom = 1.08
-  chart?.setOption({ geo: { center: [104, 36], zoom: currentZoom } })
+  backVisible.value = true
+  chart?.setOption({ geo: [{ center: [104, 36], zoom: currentZoom }, { show: true }] })
 }
 
 function focusSelected() {
@@ -198,7 +239,8 @@ function focusSelected() {
     return
   }
   currentZoom = 3.8
-  chart?.setOption({ geo: { center: [city.longitude, city.latitude], zoom: currentZoom } })
+  hideBack()
+  chart?.setOption({ geo: [{ center: [city.longitude, city.latitude], zoom: currentZoom }] })
 }
 
 onMounted(() => {
@@ -210,6 +252,7 @@ onMounted(() => {
     chart = echarts.init(el.value)
     render()
     chart.on('click', onClick)
+    chart.on('georoam', hideBack)
     observer = new ResizeObserver(() => chart?.resize())
     observer.observe(el.value)
   } catch (error) {
@@ -245,9 +288,26 @@ defineExpose({ zoomIn, zoomOut, resetView, focusSelected })
   position: absolute;
   inset: 0;
   overflow: hidden;
+  filter: drop-shadow(0 28px 28px rgba(0, 0, 0, 0.28));
+}
+
+.atlas-map::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  left: 10%;
+  right: 10%;
+  bottom: 0.5%;
+  height: 18%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.52), transparent 70%);
+  filter: blur(24px);
+  pointer-events: none;
 }
 
 .atlas-map__canvas {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
 }
