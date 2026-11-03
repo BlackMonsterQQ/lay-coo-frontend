@@ -255,6 +255,17 @@ export interface IntercityTransport {
   note?: string
 }
 
+export interface DrivingPlan {
+  route: string
+  distance: string
+  duration: string
+  tolls?: string
+  fuel?: string
+  parking: string
+  restStops: string[]
+  tips?: string[]
+}
+
 export interface TravelPlan {
   title: string
   summary: string
@@ -264,6 +275,7 @@ export interface TravelPlan {
   dayCount: number
   preferences: string[]
   intercityTransport?: IntercityTransport
+  driving?: DrivingPlan
   days: PlanDay[]
   budget?: {
     level?: string

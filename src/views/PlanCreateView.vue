@@ -24,7 +24,8 @@ const transportOptions = [
   { value: 'AUTO', label: '不限', desc: '按时间与舒适度推荐' },
   { value: 'TRAIN', label: '高铁优先', desc: '重点规划 G 字头车次' },
   { value: 'FLIGHT', label: '航班优先', desc: '重点规划直飞航班' },
-  { value: 'BOTH', label: '高铁 + 航班', desc: '两种方案都给出' }
+  { value: 'BOTH', label: '高铁 + 航班', desc: '两种方案都给出' },
+  { value: 'SELF_DRIVE', label: '自驾', desc: '路线 / 油费 / 过路费 / 停车' }
 ]
 
 function formatDate(date: Date): string {
@@ -717,6 +718,10 @@ onMounted(async () => {
 
 .p-transport-options button.is-active small {
   color: rgba(255, 207, 112, 0.52);
+}
+
+.p-transport-options button:last-child:nth-child(odd) {
+  grid-column: span 2;
 }
 
 .p-preferences {

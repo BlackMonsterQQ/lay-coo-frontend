@@ -22,6 +22,10 @@ const active = computed(() => days.value[activeDay.value] ?? null)
 const isGenerating = computed(() => detail.value?.status === 'PENDING' || detail.value?.status === 'RUNNING')
 const isFailed = computed(() => detail.value?.status === 'FAILED')
 const transport = computed(() => plan.value?.intercityTransport)
+const driving = computed(() => plan.value?.driving)
+const isSelfDrive = computed(() =>
+  detail.value?.transportPreference === 'SELF_DRIVE' || transport.value?.outbound.mode === 'SELF_DRIVE'
+)
 const transportLegs = computed<Array<{ key: string; label: string; leg: PlanTransportLeg }>>(() => {
   if (!transport.value) {
     return []
@@ -39,6 +43,8 @@ const transportPreferenceLabel = computed(() => {
       return '航班优先'
     case 'BOTH':
       return '高铁 + 航班'
+    case 'SELF_DRIVE':
+      return '自驾'
     default:
       return '智能选择'
   }
@@ -58,7 +64,7 @@ function typeLabel(type: string): string {
 }
 
 function modeLabel(mode: string): string {
-  return { TRAIN: '高铁', FLIGHT: '航班', MIXED: '高铁 / 航班' }[mode] || '交通'
+  return { TRAIN: '高铁', FLIGHT: '航班', MIXED: '高铁 / 航班', SELF_DRIVE: '自驾' }[mode] || '交通'
 }
 
 function stopPolling() {
@@ -259,8 +265,43 @@ onBeforeUnmount(stopPolling)
 
         <div class="intercity__foot">
           <span>{{ transport.note }}</span>
-          <a href="https://www.12306.cn/index/" target="_blank" rel="noopener noreferrer">查询实时车次 →</a>
+          <a v-if="!isSelfDrive" href="https://www.12306.cn/index/" target="_blank" rel="noopener noreferrer">查询实时车次 →</a>
         </div>
+      </section>
+
+      <section v-if="driving" class="driving panel">
+        <div class="driving__head">
+          <div>
+            <span class="eyebrow">SELF DRIVE</span>
+            <h2>自驾路线</h2>
+          </div>
+          <a href="https://www.amap.com/" target="_blank" rel="noopener noreferrer" class="badge badge--soft">打开高德地图 ↗</a>
+        </div>
+
+        <h3 class="driving__route">{{ driving.route }}</h3>
+        <div class="driving__stats">
+          <div><span>里程</span><strong>{{ driving.distance }}</strong></div>
+          <div><span>驾驶时长</span><strong>{{ driving.duration }}</strong></div>
+          <div><span>过路费</span><strong>{{ driving.tolls || '以实际路段为准' }}</strong></div>
+          <div><span>油费</span><strong>{{ driving.fuel || '按车型与油价估算' }}</strong></div>
+          <div class="driving__parking"><span>停车</span><strong>{{ driving.parking }}</strong></div>
+        </div>
+
+        <div class="driving__lists">
+          <div>
+            <h4>休息与中转</h4>
+            <ul>
+              <li v-for="item in driving.restStops" :key="item">{{ item }}</li>
+            </ul>
+          </div>
+          <div v-if="driving.tips?.length">
+            <h4>自驾提示</h4>
+            <ul>
+              <li v-for="item in driving.tips" :key="item">{{ item }}</li>
+            </ul>
+          </div>
+        </div>
+        <p class="driving__note">实际里程、路况、过路费、油费与停车请以导航和现场信息为准。</p>
       </section>
 
       <div class="day-tabs">
@@ -669,6 +710,101 @@ onBeforeUnmount(stopPolling)
   font-size: 10.5px;
 }
 
+.driving {
+  margin-top: 16px;
+  padding: 24px 26px;
+  background: linear-gradient(135deg, rgba(176, 138, 79, 0.08), rgba(255, 252, 245, 0.8));
+}
+
+.driving__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--line);
+}
+
+.driving__head h2 {
+  margin-top: 6px;
+  font-size: 22px;
+}
+
+.driving__route {
+  margin-top: 16px;
+  font-size: 20px;
+}
+
+.driving__stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.driving__stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 252, 245, 0.6);
+}
+
+.driving__stats span {
+  color: var(--muted);
+  font-size: 9.5px;
+}
+
+.driving__stats strong {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.driving__stats .driving__parking {
+  grid-column: span 2;
+}
+
+.driving__lists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.driving__lists h4 {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.driving__lists ul {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.65;
+}
+
+.driving__lists li::before {
+  content: '·';
+  margin-right: 5px;
+  color: var(--gold);
+}
+
+.driving__note {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 9.5px;
+}
+
 .day-tabs {
   display: flex;
   gap: 10px;
@@ -957,6 +1093,14 @@ onBeforeUnmount(stopPolling)
   }
 
   .intercity__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .driving__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .driving__lists {
     grid-template-columns: 1fr;
   }
 
