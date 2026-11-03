@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { planApi } from '@/api'
-import type { PlanDetail, PlanTimelineItem } from '@/types'
+import type { PlanDetail, PlanTimelineItem, PlanTransportLeg } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -21,6 +21,28 @@ const days = computed(() => plan.value?.days ?? [])
 const active = computed(() => days.value[activeDay.value] ?? null)
 const isGenerating = computed(() => detail.value?.status === 'PENDING' || detail.value?.status === 'RUNNING')
 const isFailed = computed(() => detail.value?.status === 'FAILED')
+const transport = computed(() => plan.value?.intercityTransport)
+const transportLegs = computed<Array<{ key: string; label: string; leg: PlanTransportLeg }>>(() => {
+  if (!transport.value) {
+    return []
+  }
+  return [
+    { key: 'outbound', label: '去程', leg: transport.value.outbound },
+    { key: 'return', label: '返程', leg: transport.value.return }
+  ]
+})
+const transportPreferenceLabel = computed(() => {
+  switch (detail.value?.transportPreference) {
+    case 'TRAIN':
+      return '高铁优先'
+    case 'FLIGHT':
+      return '航班优先'
+    case 'BOTH':
+      return '高铁 + 航班'
+    default:
+      return '智能选择'
+  }
+})
 
 const typeLabels: Record<string, string> = {
   SPOT: '景点',
@@ -33,6 +55,10 @@ const typeLabels: Record<string, string> = {
 
 function typeLabel(type: string): string {
   return typeLabels[type] || '安排'
+}
+
+function modeLabel(mode: string): string {
+  return { TRAIN: '高铁', FLIGHT: '航班', MIXED: '高铁 / 航班' }[mode] || '交通'
 }
 
 function stopPolling() {
@@ -181,7 +207,7 @@ onBeforeUnmount(stopPolling)
         <h1>{{ plan?.title || detail.title }}</h1>
         <p class="plan-head__summary">{{ plan?.summary || detail.summary }}</p>
         <div class="plan-head__meta">
-          <span>{{ detail.city }}</span>
+          <span>{{ detail.originCity || '出发地' }} → {{ detail.city }}</span>
           <span class="dot">·</span>
           <span>{{ detail.startDate }} → {{ detail.endDate }}</span>
           <span class="dot">·</span>
@@ -197,6 +223,45 @@ onBeforeUnmount(stopPolling)
           <button class="btn btn--primary btn--sm" type="button" @click="share">复制分享链接</button>
         </div>
       </header>
+
+      <section v-if="transport" class="intercity panel">
+        <div class="intercity__head">
+          <div>
+            <span class="eyebrow">INTERCITY TRANSFER</span>
+            <h2>出发地 ↔ 目的地交通</h2>
+          </div>
+          <span class="badge badge--soft">{{ transportPreferenceLabel }}</span>
+        </div>
+
+        <div class="intercity__grid">
+          <div v-for="item in transportLegs" :key="item.key" class="transport-leg">
+            <div class="transport-leg__top">
+              <span class="transport-leg__label">{{ item.label }}</span>
+              <span>{{ item.leg.date }}</span>
+            </div>
+            <h3>{{ item.leg.title }}</h3>
+            <p class="transport-leg__mode">{{ modeLabel(item.leg.mode) }} · {{ item.leg.duration }}</p>
+            <div class="transport-leg__time">
+              {{ item.leg.departureWindow }}
+              <span>→</span>
+              {{ item.leg.arrivalWindow }}
+            </div>
+            <div class="transport-options">
+              <div v-for="option in item.leg.options" :key="`${item.key}-${option.type}-${option.label}`" class="transport-option">
+                <strong>{{ option.type }}</strong>
+                <span>{{ option.label }}</span>
+                <small v-if="option.note">{{ option.note }}</small>
+              </div>
+            </div>
+            <p v-if="item.leg.tip" class="transport-leg__tip">{{ item.leg.tip }}</p>
+          </div>
+        </div>
+
+        <div class="intercity__foot">
+          <span>{{ transport.note }}</span>
+          <a href="https://www.12306.cn/index/" target="_blank" rel="noopener noreferrer">查询实时车次 →</a>
+        </div>
+      </section>
 
       <div class="day-tabs">
         <button
@@ -469,6 +534,139 @@ onBeforeUnmount(stopPolling)
   display: flex;
   gap: 10px;
   margin-top: 20px;
+}
+
+.intercity {
+  margin-top: 28px;
+  padding: 24px 26px;
+  background: linear-gradient(135deg, rgba(47, 93, 85, 0.06), rgba(255, 252, 245, 0.78));
+}
+
+.intercity__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed var(--line);
+}
+
+.intercity__head h2 {
+  margin-top: 6px;
+  font-size: 22px;
+}
+
+.intercity__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.transport-leg {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 252, 245, 0.7);
+}
+
+.transport-leg__top {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.transport-leg__label {
+  color: var(--cinnabar);
+  letter-spacing: 0.12em;
+}
+
+.transport-leg h3 {
+  margin-top: 9px;
+  font-size: 18px;
+}
+
+.transport-leg__mode {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.transport-leg__time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: rgba(47, 93, 85, 0.07);
+  color: var(--jade);
+  font-family: 'Bahnschrift', 'Segoe UI', sans-serif;
+  font-size: 13px;
+}
+
+.transport-leg__time span {
+  color: var(--gold);
+}
+
+.transport-options {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.transport-option {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 2px 8px;
+  padding-top: 7px;
+  border-top: 1px dashed var(--line);
+}
+
+.transport-option strong {
+  grid-row: span 2;
+  color: var(--gold);
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+.transport-option span {
+  color: var(--ink-soft);
+  font-size: 11.5px;
+}
+
+.transport-option small {
+  color: var(--muted);
+  font-size: 9.5px;
+  line-height: 1.5;
+}
+
+.transport-leg__tip {
+  margin-top: 9px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+.intercity__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 9.5px;
+  line-height: 1.6;
+}
+
+.intercity__foot a {
+  flex-shrink: 0;
+  color: var(--cinnabar);
+  font-size: 10.5px;
 }
 
 .day-tabs {
@@ -756,6 +954,15 @@ onBeforeUnmount(stopPolling)
   .day-extras,
   .plan-extras {
     grid-template-columns: 1fr;
+  }
+
+  .intercity__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .intercity__foot {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 

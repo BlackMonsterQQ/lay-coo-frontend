@@ -12,11 +12,20 @@ const cities = ref<City[]>([])
 const loadingCities = ref(true)
 const submitting = ref(false)
 const cityCode = ref(String(route.query.city || ''))
+const originCode = ref('')
+const originQuery = ref('')
 const extraNote = ref('')
 const preferences = ref<string[]>([])
+const transportPreference = ref('AUTO')
 const search = ref('')
 
 const preferenceOptions = ['美食', '人文历史', '自然风光', '拍照', '亲子', '夜游', '购物', '非遗体验', '慢节奏', '预算友好']
+const transportOptions = [
+  { value: 'AUTO', label: '不限', desc: '按时间与舒适度推荐' },
+  { value: 'TRAIN', label: '高铁优先', desc: '重点规划 G 字头车次' },
+  { value: 'FLIGHT', label: '航班优先', desc: '重点规划直飞航班' },
+  { value: 'BOTH', label: '高铁 + 航班', desc: '两种方案都给出' }
+]
 
 function formatDate(date: Date): string {
   const year = date.getFullYear()
@@ -32,6 +41,21 @@ end.setDate(end.getDate() + 2)
 const dateRange = ref<[string, string] | null>([formatDate(start), formatDate(end)])
 
 const selectedCity = computed(() => cities.value.find((city) => city.code === cityCode.value))
+const originCity = computed(() => cities.value.find((city) => city.code === originCode.value))
+const quickOrigins = computed(() =>
+  ['北京', '上海', '广州', '深圳', '成都']
+    .map((name) => cities.value.find((city) => city.name === name))
+    .filter((city): city is City => Boolean(city))
+)
+const originResults = computed(() => {
+  const query = originQuery.value.trim()
+  if (!query) {
+    return []
+  }
+  return cities.value
+    .filter((city) => city.name.includes(query) || city.province.includes(query))
+    .slice(0, 6)
+})
 const cityResults = computed(() => {
   const query = search.value.trim()
   if (!query) {
@@ -77,17 +101,34 @@ function chooseCity(city: City) {
   router.replace({ path: '/plan/new', query: { city: city.code } })
 }
 
+function chooseOrigin(city: City) {
+  originCode.value = city.code
+  originQuery.value = ''
+}
+
+function clearOrigin() {
+  originCode.value = ''
+}
+
 async function submit() {
   if (!selectedCity.value) {
     ElMessage.warning('请先选择目的地城市')
     return
   }
+  if (!originCity.value) {
+    ElMessage.warning('请选择出发城市')
+    return
+  }
+  if (originCity.value.code === selectedCity.value.code) {
+    ElMessage.warning('出发城市不能与目的地相同')
+    return
+  }
   if (!dateRange.value || !dateRange.value[0] || !dateRange.value[1]) {
-    ElMessage.warning('请选择游玩日期')
+    ElMessage.warning('请选择出发日期和返程日期')
     return
   }
   if (dayCount.value < 1) {
-    ElMessage.warning('结束日期不能早于开始日期')
+    ElMessage.warning('返程日期不能早于出发日期')
     return
   }
   if (dayCount.value > 7) {
@@ -98,6 +139,8 @@ async function submit() {
   try {
     const result = await planApi.generate({
       cityCode: selectedCity.value.code,
+      originCityCode: originCity.value.code,
+      transportPreference: transportPreference.value,
       startDate: dateRange.value[0],
       endDate: dateRange.value[1],
       preferences: preferences.value,
@@ -168,6 +211,36 @@ onMounted(async () => {
           </div>
 
           <div class="p-field">
+            <label>出发地 <em>*</em></label>
+            <div v-if="originCity" class="p-city-locked p-origin-locked">
+              <span class="p-city-locked__seal">{{ originCity.name.slice(0, 1) }}</span>
+              <span>
+                <strong>{{ originCity.name }}</strong>
+                <small>{{ originCity.province }} · 出发城市</small>
+              </span>
+              <button type="button" @click="clearOrigin">更换</button>
+            </div>
+            <div v-else class="p-origin-search">
+              <input v-model="originQuery" type="search" placeholder="输入出发城市，例如：北京、上海" />
+              <div class="p-quick-origins">
+                <button v-for="city in quickOrigins" :key="city.code" type="button" @click="chooseOrigin(city)">
+                  {{ city.name }}
+                </button>
+              </div>
+              <button
+                v-for="city in originResults"
+                :key="city.code"
+                type="button"
+                class="p-origin-result"
+                @click="chooseOrigin(city)"
+              >
+                {{ city.name }} <small>{{ city.province }}</small>
+              </button>
+            </div>
+            <p class="p-hint">用于规划出发地 ↔ 目的地的航班 / 高铁去程与返程</p>
+          </div>
+
+          <div class="p-field">
             <label>目的地 <em>*</em></label>
             <div v-if="selectedCity" class="p-city-locked">
               <span class="p-city-locked__seal">{{ selectedCity.name.slice(0, 1) }}</span>
@@ -186,19 +259,35 @@ onMounted(async () => {
           </div>
 
           <div class="p-field">
-            <label>游玩日期 <em>*</em></label>
+            <label>出发日期 / 返程日期 <em>*</em></label>
             <el-date-picker
               v-model="dateRange"
               type="daterange"
               value-format="YYYY-MM-DD"
               range-separator="→"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
+              start-placeholder="出发日期"
+              end-placeholder="返程日期"
               :disabled-date="disabledDate"
               size="large"
               style="width: 100%"
             />
-            <p class="p-hint">最多 7 天；同一天即单日行程</p>
+            <p class="p-hint">出发日期即行程第一天；最多 7 天，同一天即单日往返</p>
+          </div>
+
+          <div class="p-field">
+            <label>交通偏好 <span>去程 / 返程</span></label>
+            <div class="p-transport-options">
+              <button
+                v-for="item in transportOptions"
+                :key="item.value"
+                type="button"
+                :class="{ 'is-active': transportPreference === item.value }"
+                @click="transportPreference = item.value"
+              >
+                <strong>{{ item.label }}</strong>
+                <small>{{ item.desc }}</small>
+              </button>
+            </div>
           </div>
 
           <div class="p-field">
@@ -529,6 +618,105 @@ onMounted(async () => {
   margin-left: 8px;
   color: rgba(205, 235, 230, 0.4);
   font-size: 9.5px;
+}
+
+.p-origin-search {
+  position: relative;
+}
+
+.p-origin-search > input {
+  width: 100%;
+  height: 46px;
+  padding: 0 13px;
+  border: 1px solid rgba(94, 234, 212, 0.22);
+  border-radius: 10px;
+  background: rgba(2, 14, 22, 0.5);
+  color: #eafffb;
+  outline: none;
+  font-size: 12px;
+}
+
+.p-quick-origins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.p-quick-origins button {
+  padding: 4px 9px;
+  border: 1px solid rgba(94, 234, 212, 0.16);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(205, 235, 230, 0.52);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.p-quick-origins button:hover {
+  border-color: rgba(255, 180, 84, 0.55);
+  color: #ffb454;
+}
+
+.p-origin-result {
+  display: block;
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid rgba(94, 234, 212, 0.12);
+  border-top: none;
+  background: rgba(3, 14, 22, 0.95);
+  color: #dffcf6;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.p-origin-result small {
+  margin-left: 8px;
+  color: rgba(205, 235, 230, 0.4);
+  font-size: 9.5px;
+}
+
+.p-transport-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.p-transport-options button {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid rgba(94, 234, 212, 0.16);
+  border-radius: 10px;
+  background: rgba(2, 14, 22, 0.34);
+  color: rgba(205, 235, 230, 0.55);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.p-transport-options button strong {
+  color: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.p-transport-options button small {
+  color: rgba(205, 235, 230, 0.32);
+  font-size: 9.5px;
+}
+
+.p-transport-options button:hover,
+.p-transport-options button.is-active {
+  border-color: rgba(255, 180, 84, 0.55);
+  background: rgba(255, 180, 84, 0.08);
+  color: #ffb454;
+}
+
+.p-transport-options button.is-active small {
+  color: rgba(255, 207, 112, 0.52);
 }
 
 .p-preferences {

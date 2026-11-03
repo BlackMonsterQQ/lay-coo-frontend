@@ -175,6 +175,8 @@ export interface City {
 
 export interface PlanRequest {
   cityCode: string
+  originCityCode: string
+  transportPreference?: string
   startDate: string
   endDate: string
   preferences: string[]
@@ -230,6 +232,29 @@ export interface PlanBudgetItem {
   amount: string
 }
 
+export interface PlanTransportOption {
+  type: string
+  label: string
+  note?: string
+}
+
+export interface PlanTransportLeg {
+  date: string
+  mode: 'TRAIN' | 'FLIGHT' | 'MIXED' | string
+  title: string
+  duration: string
+  departureWindow: string
+  arrivalWindow: string
+  options: PlanTransportOption[]
+  tip?: string
+}
+
+export interface IntercityTransport {
+  outbound: PlanTransportLeg
+  return: PlanTransportLeg
+  note?: string
+}
+
 export interface TravelPlan {
   title: string
   summary: string
@@ -238,6 +263,7 @@ export interface TravelPlan {
   endDate: string
   dayCount: number
   preferences: string[]
+  intercityTransport?: IntercityTransport
   days: PlanDay[]
   budget?: {
     level?: string
@@ -253,6 +279,9 @@ export interface PlanDetail {
   status: 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED' | string
   city: string
   cityCode: string
+  originCity?: string
+  originCityCode?: string
+  transportPreference?: string
   startDate: string
   endDate: string
   dayCount: number
