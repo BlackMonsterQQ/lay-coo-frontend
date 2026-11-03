@@ -145,8 +145,10 @@ function render() {
 
 function onClick(params: unknown) {
   const data = dataOf(params)
-  if (data?.cityCode) {
-    emit('update:modelValue', data.cityCode)
+  const name = (params as { name?: string }).name
+  const code = data?.cityCode || props.cities.find((city) => city.name === name)?.code
+  if (code) {
+    emit('update:modelValue', code)
   }
 }
 
