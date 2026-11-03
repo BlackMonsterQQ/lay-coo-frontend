@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
 import type { EChartsOption } from 'echarts'
-import chinaGeoJson from '@/assets/maps/china.json'
+import chinaGeoJson from '@/assets/maps/china-outline.json'
 import type { City } from '@/types'
 
 const props = defineProps<{
@@ -21,7 +21,6 @@ let chart: echarts.ECharts | null = null
 let observer: ResizeObserver | null = null
 let mapRegistered = false
 let currentZoom = 1.08
-const backVisible = ref(true)
 
 interface CityDatum {
   name: string
@@ -60,59 +59,35 @@ const option = computed<EChartsOption>(() => {
 
   return {
     backgroundColor: 'transparent',
-    geo: [
-      {
-        map: 'china',
-        roam: true,
-        zoom: currentZoom,
-        center: [104, 36],
-        layoutCenter: ['50%', '50%'],
-        layoutSize: '100%',
-        scaleLimit: { min: 0.9, max: 14 },
-        z: 2,
-        itemStyle: {
-          areaColor: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(112, 181, 184, 0.36)' },
-            { offset: 0.5, color: 'rgba(24, 62, 68, 0.22)' },
-            { offset: 1, color: 'rgba(3, 15, 19, 0.04)' }
-          ]),
-          borderColor: 'rgba(235, 255, 250, 0.82)',
-          borderWidth: 1.15,
-          shadowColor: 'rgba(0, 0, 0, 0.68)',
-          shadowBlur: 48,
-          shadowOffsetY: 24
-        },
-        emphasis: {
-          itemStyle: {
-            areaColor: 'rgba(120, 190, 190, 0.2)',
-            borderColor: 'rgba(255, 255, 255, 0.92)'
-          },
-          label: { show: false }
-        },
-        select: { disabled: true }
+    geo: {
+      map: 'china',
+      roam: true,
+      zoom: currentZoom,
+      center: [104, 36],
+      layoutCenter: ['50%', '50%'],
+      layoutSize: '100%',
+      scaleLimit: { min: 0.9, max: 14 },
+      itemStyle: {
+        areaColor: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: 'rgba(112, 181, 184, 0.36)' },
+          { offset: 0.5, color: 'rgba(24, 62, 68, 0.22)' },
+          { offset: 1, color: 'rgba(3, 15, 19, 0.04)' }
+        ]),
+        borderColor: 'rgba(235, 255, 250, 0.82)',
+        borderWidth: 1.15,
+        shadowColor: 'rgba(0, 0, 0, 0.55)',
+        shadowBlur: 30,
+        shadowOffsetY: 18
       },
-      {
-        map: 'china',
-        roam: false,
-        silent: true,
-        zoom: currentZoom,
-        center: [104, 36],
-        layoutCenter: ['50.35%', '51.55%'],
-        layoutSize: '100%',
-        z: 1,
-        show: backVisible.value,
+      emphasis: {
         itemStyle: {
-          areaColor: 'rgba(2, 12, 15, 0.38)',
-          borderColor: 'rgba(145, 205, 200, 0.2)',
-          borderWidth: 1,
-          shadowColor: 'rgba(0, 0, 0, 0.4)',
-          shadowBlur: 18,
-          shadowOffsetY: 10
+          areaColor: 'rgba(120, 190, 190, 0.2)',
+          borderColor: 'rgba(255, 255, 255, 0.92)'
         },
-        emphasis: { disabled: true },
         label: { show: false }
-      }
-    ],
+      },
+      select: { disabled: true }
+    },
     tooltip: {
       trigger: 'item',
       backgroundColor: 'rgba(12, 22, 26, 0.82)',
@@ -207,30 +182,19 @@ function onClick(params: unknown) {
   }
 }
 
-function hideBack() {
-  if (!backVisible.value) {
-    return
-  }
-  backVisible.value = false
-  chart?.setOption({ geo: [{}, { show: false }] })
-}
-
 function zoomIn() {
   currentZoom = Math.min(currentZoom * 1.35, 8)
-  hideBack()
-  chart?.setOption({ geo: [{ zoom: currentZoom }] })
+  chart?.setOption({ geo: { zoom: currentZoom } })
 }
 
 function zoomOut() {
   currentZoom = Math.max(currentZoom / 1.35, 1)
-  hideBack()
-  chart?.setOption({ geo: [{ zoom: currentZoom }] })
+  chart?.setOption({ geo: { zoom: currentZoom } })
 }
 
 function resetView() {
   currentZoom = 1.08
-  backVisible.value = true
-  chart?.setOption({ geo: [{ center: [104, 36], zoom: currentZoom }, { show: true }] })
+  chart?.setOption({ geo: { center: [104, 36], zoom: currentZoom } })
 }
 
 function focusSelected() {
@@ -239,8 +203,7 @@ function focusSelected() {
     return
   }
   currentZoom = 3.8
-  hideBack()
-  chart?.setOption({ geo: [{ center: [city.longitude, city.latitude], zoom: currentZoom }] })
+  chart?.setOption({ geo: { center: [city.longitude, city.latitude], zoom: currentZoom } })
 }
 
 onMounted(() => {
@@ -252,7 +215,6 @@ onMounted(() => {
     chart = echarts.init(el.value)
     render()
     chart.on('click', onClick)
-    chart.on('georoam', hideBack)
     observer = new ResizeObserver(() => chart?.resize())
     observer.observe(el.value)
   } catch (error) {
@@ -288,7 +250,6 @@ defineExpose({ zoomIn, zoomOut, resetView, focusSelected })
   position: absolute;
   inset: 0;
   overflow: hidden;
-  filter: drop-shadow(0 28px 28px rgba(0, 0, 0, 0.28));
 }
 
 .atlas-map::before {
@@ -310,6 +271,7 @@ defineExpose({ zoomIn, zoomOut, resetView, focusSelected })
   z-index: 1;
   width: 100%;
   height: 100%;
+  filter: drop-shadow(0 26px 22px rgba(0, 0, 0, 0.34));
 }
 
 .atlas-map__fallback {
