@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
 import type { EChartsOption } from 'echarts'
-import chinaGeoJson from '@/assets/maps/china-outline.json'
+import chinaOutline from '@/assets/maps/china-outline.json'
 import type { City } from '@/types'
 
 const props = defineProps<{
@@ -45,10 +45,55 @@ function dataOf(params: unknown): CityDatum | undefined {
 const selectedCity = computed(() => props.cities.find((city) => city.code === props.modelValue))
 const featuredSet = computed(() => new Set(props.featuredCodes || []))
 
+const OBLIQUE_LAT_BASE = 18
+const OBLIQUE_LAT_SPAN = 36
+const OBLIQUE_TILT = 0.78
+const OBLIQUE_NARROW = 0.22
+const OBLIQUE_SHIFT = 2.5
+
+/**
+ * 斜俯视投影：北部收窄、纵向压缩、轻微东移，形成从南向北俯瞰的斜角。
+ * 地图轮廓与城市点使用同一个函数，因此点位不会与地图错位。
+ */
+function obliquePoint(point: number[]): [number, number] {
+  const lon = point[0]
+  const lat = point[1]
+  const north = Math.max(0, Math.min(1, (lat - OBLIQUE_LAT_BASE) / OBLIQUE_LAT_SPAN))
+  const width = 1 - OBLIQUE_NARROW * north
+  return [
+    104 + (lon - 104) * width + OBLIQUE_SHIFT * north,
+    OBLIQUE_LAT_BASE + (lat - OBLIQUE_LAT_BASE) * OBLIQUE_TILT
+  ]
+}
+
+const MAP_CENTER = obliquePoint([104, 36])
+
+function transformCoordinates(coords: unknown): unknown {
+  if (Array.isArray(coords) && typeof coords[0] === 'number') {
+    return obliquePoint(coords as number[])
+  }
+  return (coords as unknown[]).map(transformCoordinates)
+}
+
+interface RawGeoJson {
+  features: Array<{ geometry?: { coordinates?: unknown } } & Record<string, unknown>>
+}
+
+const rawChina = chinaOutline as unknown as RawGeoJson
+const chinaGeoJson = {
+  ...rawChina,
+  features: rawChina.features.map((feature) => ({
+    ...feature,
+    geometry: feature.geometry
+      ? { ...feature.geometry, coordinates: transformCoordinates(feature.geometry.coordinates) }
+      : feature.geometry
+  }))
+}
+
 const option = computed<EChartsOption>(() => {
   const all: CityDatum[] = props.cities.map((city) => ({
     name: city.name,
-    value: [city.longitude, city.latitude],
+    value: obliquePoint([city.longitude, city.latitude]),
     cityCode: city.code,
     province: city.province,
     hasContent: city.hasContent === 1,
@@ -63,7 +108,7 @@ const option = computed<EChartsOption>(() => {
       map: 'china',
       roam: true,
       zoom: currentZoom,
-      center: [104, 36],
+      center: MAP_CENTER,
       layoutCenter: ['50%', '50%'],
       layoutSize: '100%',
       scaleLimit: { min: 0.9, max: 14 },
@@ -194,7 +239,7 @@ function zoomOut() {
 
 function resetView() {
   currentZoom = 1.08
-  chart?.setOption({ geo: { center: [104, 36], zoom: currentZoom } })
+  chart?.setOption({ geo: { center: MAP_CENTER, zoom: currentZoom } })
 }
 
 function focusSelected() {
@@ -203,7 +248,7 @@ function focusSelected() {
     return
   }
   currentZoom = 3.8
-  chart?.setOption({ geo: { center: [city.longitude, city.latitude], zoom: currentZoom } })
+  chart?.setOption({ geo: { center: obliquePoint([city.longitude, city.latitude]), zoom: currentZoom } })
 }
 
 onMounted(() => {
