@@ -192,6 +192,11 @@ export interface PlanGenerateResponse {
 
 export interface PlanTimelineItem {
   time: string
+  departureTime?: string
+  arrivalTime?: string
+  from?: string
+  transport?: string
+  travelMinutes?: number
   durationMinutes: number
   type: string
   title: string
@@ -222,6 +227,10 @@ export interface PlanDay {
   date: string
   theme: string
   summary?: string
+  startTime?: string
+  endTime?: string
+  startPoint?: string
+  routeSummary?: string
   timeline: PlanTimelineItem[]
   food?: PlanFood[]
   transport?: PlanTransport[]

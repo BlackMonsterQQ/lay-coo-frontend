@@ -224,7 +224,7 @@ onBeforeUnmount(stopPolling)
             <span class="dot">·</span>
             <span>{{ detail.preferences.join(' / ') }}</span>
           </template>
-          <span v-if="detail.model" class="badge badge--soft">{{ detail.model }}</span>
+          <span v-if="detail.model && !detail.model.startsWith('mock')" class="badge badge--soft">{{ detail.model }}</span>
         </div>
         <div class="plan-head__actions">
           <button class="btn btn--ghost btn--sm" type="button" @click="regenerate">重新规划</button>
@@ -329,16 +329,33 @@ onBeforeUnmount(stopPolling)
             <h2>{{ active.theme }}</h2>
             <p v-if="active.summary">{{ active.summary }}</p>
           </div>
+          <div v-if="active.startTime" class="day-window">
+            <span><strong>{{ active.startTime }}</strong> 出发</span>
+            <i>→</i>
+            <span><strong>{{ active.endTime }}</strong> 结束</span>
+          </div>
         </div>
+        <p v-if="active.startPoint || active.routeSummary" class="day-route">
+          <span v-if="active.startPoint">起点：{{ active.startPoint }}</span>
+          <span v-if="active.routeSummary">{{ active.routeSummary }}</span>
+        </p>
 
         <div class="timeline">
           <div v-for="(item, index) in active.timeline" :key="`${item.time}-${index}`" class="timeline-item">
-            <div class="timeline-time">{{ item.time }}</div>
+            <div class="timeline-time">
+              <strong>{{ item.departureTime || item.time }}</strong>
+              <span>出发</span>
+              <small>{{ item.arrivalTime || item.time }} 到达</small>
+            </div>
             <div class="timeline-dot" />
             <div class="timeline-card">
               <div class="timeline-card__head">
                 <span class="badge badge--soft">{{ typeLabel(item.type) }}</span>
-                <span class="timeline-duration">{{ item.durationMinutes }} 分钟</span>
+                <span v-if="item.from" class="timeline-from">从 {{ item.from }}</span>
+                <span v-if="item.transport" class="timeline-transport">
+                  {{ item.transport }}<template v-if="item.travelMinutes !== undefined"> · {{ item.travelMinutes }} 分钟</template>
+                </span>
+                <span class="timeline-duration">停留 {{ item.durationMinutes }} 分钟</span>
                 <span v-if="item.area" class="timeline-area">{{ item.area }}</span>
               </div>
               <h3>{{ item.title }}</h3>
@@ -878,26 +895,97 @@ onBeforeUnmount(stopPolling)
   line-height: 1.8;
 }
 
+.day-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.day-window {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.day-window strong {
+  color: var(--cinnabar);
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.day-window i {
+  color: var(--line-strong);
+  font-style: normal;
+}
+
+.day-route {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 12px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: rgba(47, 93, 85, 0.05);
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.7;
+}
+
+.day-route span:last-child {
+  color: var(--ink-soft);
+}
+
 .timeline {
   display: flex;
   flex-direction: column;
   gap: 0;
-  margin-top: 26px;
+  margin-top: 22px;
 }
 
 .timeline-item {
   display: grid;
-  grid-template-columns: 62px 18px minmax(0, 1fr);
+  grid-template-columns: 78px 18px minmax(0, 1fr);
   gap: 12px;
   align-items: start;
 }
 
 .timeline-time {
-  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  padding-top: 13px;
   font-family: var(--serif);
-  font-size: 16px;
   color: var(--cinnabar);
   text-align: right;
+}
+
+.timeline-time strong {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.timeline-time span {
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+}
+
+.timeline-time small {
+  margin-top: 2px;
+  color: var(--gold);
+  font-family: 'Bahnschrift', 'Segoe UI', sans-serif;
+  font-size: 9px;
+  white-space: nowrap;
 }
 
 .timeline-dot {
@@ -943,10 +1031,19 @@ onBeforeUnmount(stopPolling)
 
 .timeline-card__head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px 8px;
   color: var(--muted);
   font-size: 10.5px;
+}
+
+.timeline-from {
+  color: var(--ink-soft);
+}
+
+.timeline-transport {
+  color: var(--jade);
 }
 
 .timeline-duration {
@@ -1138,12 +1235,29 @@ onBeforeUnmount(stopPolling)
   }
 
   .timeline-item {
-    grid-template-columns: 48px 16px minmax(0, 1fr);
+    grid-template-columns: 64px 16px minmax(0, 1fr);
     gap: 8px;
   }
 
   .timeline-time {
+    padding-top: 12px;
+  }
+
+  .timeline-time strong {
     font-size: 13px;
+  }
+
+  .timeline-time small {
+    font-size: 8px;
+  }
+
+  .day-panel__head {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .day-window {
+    align-self: flex-start;
   }
 
   .timeline-card {

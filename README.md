@@ -18,6 +18,8 @@ Vue 3 + Vite + TypeScript + Pinia + Vue Router + Element Plus + ECharts。
 
 ![每天的具体景点与餐饮安排](screenshots/plan-detail.png)
 
+![每天的出发时间、到达时间与交通过程](screenshots/plan-schedule.png)
+
 ![我的行程](screenshots/my-plans.png)
 
 更多截图见 `screenshots/`。
