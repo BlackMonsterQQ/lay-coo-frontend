@@ -16,6 +16,8 @@ Vue 3 + Vite + TypeScript + Pinia + Vue Router + Element Plus + ECharts。
 
 ![多日行程结果](screenshots/plan-result.png)
 
+![每天的具体景点与餐饮安排](screenshots/plan-detail.png)
+
 ![我的行程](screenshots/my-plans.png)
 
 更多截图见 `screenshots/`。
@@ -55,7 +57,7 @@ npm.cmd run dev
 - 行程配置包含出发城市、出发/返程日期、交通偏好（不限 / 高铁 / 航班 / 两者 / 自驾）
 - 结果页展示去程/返程高铁与航班参考方案，并提示以 12306 / 航司实时信息为准
 - 自驾模式额外展示自驾路线、里程、驾驶时长、过路费、油费、停车、休息与中转建议
-- 结果页按天展示时间轴、餐饮、交通、预算、雨天备选
+- 结果页按天展示具体景点、餐饮店名/菜名、体验和交通时间轴，每天至少 3 个安排
 - 登录用户生成的攻略自动保存到 MySQL，在 `/my-plans`「我的行程」中查看
 - 生成中自动轮询，失败可重试
 
