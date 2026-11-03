@@ -9,8 +9,12 @@ import type {
   ContentCard,
   ContentDetail,
   ContentQuery,
+  City,
   InteractionStats,
   PageResult,
+  PlanDetail,
+  PlanGenerateResponse,
+  PlanRequest,
   RecommendItem,
   TagCount,
   UserInfo
@@ -43,6 +47,17 @@ export const recommendApi = {
   hot: (limit = 8) => http.get<RecommendItem[], RecommendItem[]>('/recommend/hot', { params: { limit } }),
   similar: (contentId: number | string, size = 6) =>
     http.get<RecommendItem[], RecommendItem[]>(`/recommend/similar/${contentId}`, { params: { size } })
+}
+
+export const cityApi = {
+  list: () => http.get<City[], City[]>('/city/list')
+}
+
+export const planApi = {
+  generate: (payload: PlanRequest) =>
+    http.post<PlanGenerateResponse, PlanGenerateResponse>('/plan/generate', payload),
+  detail: (planNo: string) => http.get<PlanDetail, PlanDetail>(`/plan/${planNo}`),
+  retry: (planNo: string) => http.post<PlanDetail, PlanDetail>(`/plan/${planNo}/retry`)
 }
 
 export const interactionApi = {

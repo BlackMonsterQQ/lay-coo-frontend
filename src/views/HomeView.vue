@@ -6,11 +6,10 @@ import { contentApi, recommendApi } from '@/api'
 import { useUserStore } from '@/stores/user'
 import type { Category, ContentCard, RecommendItem, TagCount } from '@/types'
 import ContentCardView from '@/components/ContentCard.vue'
-import CoverArt from '@/components/CoverArt.vue'
 import BaseChart from '@/components/BaseChart.vue'
-import SearchIcon from '@/components/SearchIcon.vue'
 import EmptyState from '@/components/EmptyState.vue'
-import { formatCount, formatRating, categoryChar } from '@/utils/format'
+import PlanHeroSection from '@/components/plan/PlanHeroSection.vue'
+import { formatCount, categoryChar } from '@/utils/format'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -21,12 +20,9 @@ const recommendations = ref<RecommendItem[]>([])
 const humanity = ref<ContentCard[]>([])
 const hot = ref<RecommendItem[]>([])
 const tags = ref<TagCount[]>([])
-const hotKeywords = ref<string[]>([])
-const keyword = ref('')
 const totalContents = ref(0)
 const refreshLoading = ref(false)
 
-const hero = computed(() => recommendations.value[0])
 const hotTop = computed(() => hot.value.slice(0, 5))
 
 const hotOption = computed<EChartsOption>(() => {
@@ -86,13 +82,12 @@ async function loadRecommendations() {
 async function loadAll() {
   loading.value = true
   try {
-    const [cats, recs, hum, hotList, tagList, keywords, firstPage] = await Promise.allSettled([
+    const [cats, recs, hum, hotList, tagList, firstPage] = await Promise.allSettled([
       contentApi.categories(),
       recommendApi.home(8),
       contentApi.list({ type: 'HUMANITY', size: 6, sort: 'hot' }),
       recommendApi.hot(8),
       contentApi.hotTags(10),
-      contentApi.hotKeywords(),
       contentApi.list({ page: 1, size: 1 })
     ])
     if (cats.status === 'fulfilled') categories.value = cats.value
@@ -100,16 +95,10 @@ async function loadAll() {
     if (hum.status === 'fulfilled') humanity.value = hum.value.list
     if (hotList.status === 'fulfilled') hot.value = hotList.value
     if (tagList.status === 'fulfilled') tags.value = tagList.value
-    if (keywords.status === 'fulfilled') hotKeywords.value = keywords.value.slice(0, 5)
     if (firstPage.status === 'fulfilled') totalContents.value = firstPage.value.total
   } finally {
     loading.value = false
   }
-}
-
-function search() {
-  const value = keyword.value.trim()
-  router.push({ path: '/search', query: value ? { keyword: value } : {} })
 }
 
 function goCategory(code: string) {
@@ -125,81 +114,7 @@ onMounted(loadAll)
 
 <template>
   <div class="home">
-    <section class="hero">
-      <div class="hero__bg serif" aria-hidden="true">杭</div>
-      <div class="container hero__inner">
-        <div class="hero__copy">
-          <span class="eyebrow">HANGZHOU · 本地文旅</span>
-          <h1 class="hero__title">
-            在杭州，<br />
-            过一种<span class="hero__accent">有文化</span>的日常
-          </h1>
-          <p class="hero__lead">
-            从一碗片儿川到一条苏堤，从龙井茶山到良渚古城。岚途用 AI 读懂这座城，再把吃喝玩乐与人文历史，按你的兴趣慢慢铺开。
-          </p>
-
-          <form class="hero__search" @submit.prevent="search">
-            <span class="hero__search-icon" aria-hidden="true"><SearchIcon :size="18" /></span>
-            <input v-model="keyword" class="hero__search-input" type="search" placeholder="试试搜「西湖」「龙井」「非遗」…" aria-label="搜索本地文旅内容" />
-            <button class="btn btn--primary" type="submit">开始探索</button>
-          </form>
-
-          <div class="hero__keywords">
-            <span class="hero__keywords-label">大家都在搜</span>
-            <button
-              v-for="word in hotKeywords"
-              :key="word"
-              class="chip chip--sm"
-              type="button"
-              @click="router.push({ path: '/search', query: { keyword: word } })"
-            >
-              {{ word }}
-            </button>
-          </div>
-
-          <div class="hero__stats">
-            <div class="stat">
-              <strong>{{ categories.length || 9 }}</strong>
-              <span>内容分类</span>
-            </div>
-            <div class="stat">
-              <strong>{{ totalContents || 18 }}</strong>
-              <span>精选内容</span>
-            </div>
-            <div class="stat">
-              <strong>3</strong>
-              <span>人工审核环节</span>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="hero" class="hero__feature">
-          <RouterLink :to="`/content/${hero.content.id}`" class="hero-card">
-            <CoverArt
-              :code="hero.content.categoryCode"
-              :icon="hero.content.categoryIcon"
-              :desc="hero.content.coverDesc"
-              variant="wide"
-            />
-            <div class="hero-card__info">
-              <span class="badge badge--ai">今日为你推荐</span>
-              <h2 class="hero-card__title">{{ hero.content.title }}</h2>
-              <p class="hero-card__reason">{{ hero.reason }}</p>
-              <div class="hero-card__meta">
-                <span>★ {{ formatRating(hero.content.rating) }}</span>
-                <span>·</span>
-                <span>{{ hero.content.area }}</span>
-                <span class="hero-card__go">去看看 ↗</span>
-              </div>
-            </div>
-          </RouterLink>
-          <div class="hero__seal serif" aria-hidden="true">
-            <span>AI</span>
-            <small>content</small>
-          </div>
-        </div>
-      </div>
-    </section>
+    <PlanHeroSection />
 
     <section class="container category-strip">
       <div class="category-strip__head">

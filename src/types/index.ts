@@ -159,3 +159,109 @@ export interface ContentQuery {
   page?: number
   size?: number
 }
+
+export interface City {
+  id: number
+  code: string
+  name: string
+  country: string
+  longitude: number
+  latitude: number
+  hasContent: number
+  enabled: number
+  sort: number
+}
+
+export interface PlanRequest {
+  cityCode: string
+  startDate: string
+  endDate: string
+  preferences: string[]
+  extraNote?: string
+}
+
+export interface PlanGenerateResponse {
+  planNo: string
+  status: string
+  dayCount: number
+  nights: number
+}
+
+export interface PlanTimelineItem {
+  time: string
+  durationMinutes: number
+  type: string
+  title: string
+  area?: string
+  address?: string
+  description: string
+  tips?: string
+  sourceContentId?: number
+}
+
+export interface PlanFood {
+  name: string
+  reason?: string
+  priceRange?: string
+  sourceContentId?: number
+}
+
+export interface PlanTransport {
+  from: string
+  to: string
+  method: string
+  duration: string
+  tip?: string
+}
+
+export interface PlanDay {
+  day: number
+  date: string
+  theme: string
+  summary?: string
+  timeline: PlanTimelineItem[]
+  food?: PlanFood[]
+  transport?: PlanTransport[]
+}
+
+export interface PlanBudgetItem {
+  item: string
+  amount: string
+}
+
+export interface TravelPlan {
+  title: string
+  summary: string
+  city: string
+  startDate: string
+  endDate: string
+  dayCount: number
+  preferences: string[]
+  days: PlanDay[]
+  budget?: {
+    level?: string
+    breakdown?: PlanBudgetItem[]
+  }
+  rainPlan?: string
+  packingTips?: string[]
+  warnings?: string[]
+}
+
+export interface PlanDetail {
+  planNo: string
+  status: 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED' | string
+  city: string
+  cityCode: string
+  startDate: string
+  endDate: string
+  dayCount: number
+  nights: number
+  preferences: string[]
+  title?: string
+  summary?: string
+  plan: TravelPlan | null
+  error?: string
+  progress: number
+  model?: string
+  createTime?: string
+}
